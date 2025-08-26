@@ -1,0 +1,90 @@
+<!DOCTYPE html><html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Imagen rebotando en canvas</title>
+  <style>
+    :root { --canvas-w: 640px; --canvas-h: 400px; }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      display: grid;
+      place-items: center;         /* Canvas centrado en medio de la página */
+      background: #111;            /* Fondo de la página */
+    }
+    canvas {
+      background: #000;            /* Canvas negro */
+      width: var(--canvas-w);
+      height: var(--canvas-h);
+      border-radius: 12px;
+      box-shadow: 0 10px 24px rgba(0,0,0,.35);
+    }
+  </style>
+</head>
+<body>
+  <!-- ÚNICO CANVAS -->
+  <canvas id="lienzo" width="640" height="400"></canvas>  <script>
+  (() => {
+    const canvas = document.getElementById('lienzo');
+    const ctx = canvas.getContext('2d');
+
+    const DPR = Math.max(1, window.devicePixelRatio || 1);
+    function setupHiDPI() {
+      const cssW = parseInt(getComputedStyle(canvas).width);
+      const cssH = parseInt(getComputedStyle(canvas).height);
+      canvas.width = Math.round(cssW * DPR);
+      canvas.height = Math.round(cssH * DPR);
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    }
+    setupHiDPI();
+    window.addEventListener('resize', setupHiDPI);
+
+    // ──────────────────────────────────────────────
+    // IMAGEN DVD
+    // ──────────────────────────────────────────────
+    const img = new Image();
+    img.src = 'dvd.png'; // aquí tu imagen
+    let ready = false;
+
+    const state = {
+      x: 100,
+      y: 80,
+      w: 96,
+      h: 96,
+      vx: 220,
+      vy: 180
+    };
+
+    img.onload = () => { ready = true; requestAnimationFrame(loop); };
+
+    let last = performance.now();
+    function loop(t) {
+      const dt = Math.min(0.032, (t - last) / 1000);
+      last = t;
+      update(dt);
+      render();
+      requestAnimationFrame(loop);
+    }
+
+    function update(dt) {
+      if (!ready) return;
+      state.x += state.vx * dt;
+      state.y += state.vy * dt;
+
+      const maxX = canvas.width / DPR - state.w;
+      const maxY = canvas.height / DPR - state.h;
+
+      if (state.x <= 0) { state.x = 0; state.vx *= -1; }
+      if (state.y <= 0) { state.y = 0; state.vy *= -1; }
+      if (state.x >= maxX) { state.x = maxX; state.vx *= -1; }
+      if (state.y >= maxY) { state.y = maxY; state.vy *= -1; }
+    }
+
+    function render() {
+      ctx.clearRect(0, 0, canvas.width / DPR, canvas.height / DPR);
+      if (ready) ctx.drawImage(img, state.x, state.y, state.w, state.h);
+    }
+  })();
+  </script></body>
+</html>
